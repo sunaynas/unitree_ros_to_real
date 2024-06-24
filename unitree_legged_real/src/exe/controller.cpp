@@ -1,6 +1,8 @@
 
 #include <pthread.h>
+#include <ros/callback_queue.h>
 #include <ros/ros.h>
+#include <ros/spinner.h>
 #include <unitree_legged_msgs/HighCmd.h>
 #include <unitree_legged_msgs/HighState.h>
 
@@ -9,7 +11,7 @@
 #include <string>
 
 #include "convert.h"
-#include "unitree_legged_msgs/HighCmd.h"
+#include "unitree_legged_msgs/HighCmdService.h"
 
 #ifdef SDK3_1
 using namespace aliengo;
@@ -18,13 +20,25 @@ using namespace aliengo;
 using namespace UNITREE_LEGGED_SDK;
 #endif
 
+template <typename TLCM>
+void *update_loop(void *param) {
+  TLCM *data = (TLCM *)param;
+  while (ros::ok) {
+    data->Recv();
+    std::cout << "Sending robo data" << std::endl;
+    usleep(2000);
+  }
+}
+
 template <typename TCmd, typename TState, typename TLCM>
 class Controller {
  public:
-  Controller(TLCM &roslcm) {
-    m_multiExec.set_number_of_threads(2);
+  Controller(TLCM &roslcm) : m_multiSpinner{2} {
+    // m_multiExec.set_number_of_threads(2);
 
     m_node = ros::NodeHandle("controller_node");
+    m_node.setCallbackQueue(&m_queue);
+
     m_service = m_node.advertiseService("control_a1",
                                         &Controller::controllerCallback, this);
     roslcm.SubscribeState();
@@ -38,20 +52,22 @@ class Controller {
     m_reqHighROS.pitch = 0;
     m_reqHighROS.yaw = 0;
 
-    // pthread_t tid;
-    // pthread_create(&tid, NULL, Controller::update_loop, &roslcm);
+    pthread_t tid;
+    pthread_create(&tid, NULL, update_loop<TLCM>, &roslcm);
 
     // m_thread = std::thread(&Controller::runLoop, this);
 
-    m_multiExec.add_callback(std::bind(&Controller::runLoop, this));
-    m_multiExec.add_callback(std::bind(&Controller::updateLoop, &roslcm));
+    // m_multiExec.add_callback(std::bind(&Controller::runLoop, this));
+    // m_multiExec.add_callback(std::bind(&Controller::updateLoop, &roslcm));
 
-    m_multiExec.spin();
+    runLoop(roslcm);
+
+    // m_multiExec.spin();
   }
 
-  ~Controller() {
-    if (m_thread.joinable()) m_thread.join();
-  }
+  //   ~Controller() {
+  //     if (m_thread.joinable()) m_thread.join();
+  //   }
 
  private:
   bool controllerCallback(unitree_legged_msgs::HighCmdService::Request &req,
@@ -68,7 +84,7 @@ class Controller {
     return res.success;
   }
 
-  void runLoop() {
+  void runLoop(TLCM &roslcm) {
     ros::Rate loop_rate(500);
     // SetLevel(HIGHLEVEL);
     TCmd SendHighLCM = {0};
@@ -83,19 +99,13 @@ class Controller {
       std::cout << "Sending lcm" << std::endl;
 
       //   ros::spinOnce();
+      m_mulitSpinner.spin(&m_queue);
       loop_rate.sleep();
     }
   }
 
-  void *update_loop(void *param) {
-    TLCM *data = (TLCM *)param;
-    while (ros::ok) {
-      data->Recv();
-      std::cout << "Sending robo data" << std::endl;
-      usleep(2000);
-    }
-  }
-  ros::MultiThreadedExecutor m_multiExec;
+  ros::MultiThreadedSpinner m_multiSpinner;
+  ros::CallbackQueue m_queue;
   ros::ServiceServer m_service;
   ros::NodeHandle m_node;
   unitree_legged_msgs::HighCmd m_reqHighROS;
