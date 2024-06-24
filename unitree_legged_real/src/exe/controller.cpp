@@ -99,7 +99,7 @@ class Controller {
       std::cout << "Sending lcm" << std::endl;
 
       //   ros::spinOnce();
-      m_mulitSpinner.spin(&m_queue);
+      m_multiSpinner.spin(&m_queue);
       loop_rate.sleep();
     }
   }
@@ -111,8 +111,7 @@ class Controller {
   unitree_legged_msgs::HighCmd m_reqHighROS;
   unitree_legged_msgs::HighState m_recvHighROS;
   //   std::thread m_thread;
-}
-
+};
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "walk_ros_mode");
