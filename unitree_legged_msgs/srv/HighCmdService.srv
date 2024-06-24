@@ -1,0 +1,9 @@
+# Request definition
+uint8 mode
+float32 forwardSpeed
+float32 sideSpeed
+float32 rotateSpeed	
+---
+# Response definition (if your service requires a response)
+bool success
+string message

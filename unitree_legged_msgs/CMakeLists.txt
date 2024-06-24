@@ -21,6 +21,11 @@ add_message_files(
   HighState.msg
 )
 
+add_service_files(
+  FILES
+  HighCmdService.srv
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs

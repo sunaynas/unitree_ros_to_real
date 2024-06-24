@@ -59,3 +59,7 @@ add_dependencies(torque_lcm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 add_executable(walk_lcm src/exe/walk_mode.cpp)
 target_link_libraries(walk_lcm ${EXTRA_LIBS} ${catkin_LIBRARIES})
 add_dependencies(walk_lcm ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(controller src/exe/controller.cpp)
+target_link_libraries(controller ${EXTRA_LIBS} ${catkin_LIBRARIES})
+add_dependencies(controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
