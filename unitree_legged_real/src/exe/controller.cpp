@@ -8,7 +8,7 @@
 #include <boost/thread/mutex.hpp>
 #include <string>
 
-#include "include/convert.h"
+#include "convert.h"
 #include "unitree_legged_msgs/HighCmd.h"
 
 #ifdef SDK3_1
