@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 #ifdef SDK3_1
   aliengo::Control control(aliengo::HIGHLEVEL);
   aliengo::LCM roslcm;
-  Controller<aliengo::HighCmd, aliengo::HighState, aliengo::LCM>(roslcm);
+  Controller<aliengo::HighCmd, aliengo::HighState, aliengo::LCM> c(roslcm);
 #endif
 
 #ifdef SDK3_2
@@ -136,6 +136,7 @@ int main(int argc, char *argv[]) {
   // UNITREE_LEGGED_SDK::InitEnvironment();
   UNITREE_LEGGED_SDK::LCM roslcm(UNITREE_LEGGED_SDK::HIGHLEVEL);
   Controller<UNITREE_LEGGED_SDK::HighCmd, UNITREE_LEGGED_SDK::HighState,
-             UNITREE_LEGGED_SDK::LCM>(roslcm);
+             UNITREE_LEGGED_SDK::LCM>
+      c(roslcm);
 #endif
 }
