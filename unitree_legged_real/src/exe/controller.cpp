@@ -25,7 +25,7 @@ void *update_loop(void *param) {
   TLCM *data = (TLCM *)param;
   while (ros::ok) {
     data->Recv();
-    std::cout << "Sending robo data" << std::endl;
+    //std::cout << "Sending robo data" << std::endl;
     usleep(2000);
   }
 }
@@ -33,11 +33,11 @@ void *update_loop(void *param) {
 template <typename TCmd, typename TState, typename TLCM>
 class Controller {
  public:
-  Controller(TLCM &roslcm) : m_multiSpinner{2} {
+  Controller(TLCM &roslcm) : m_spinner{1} {
     // m_multiExec.set_number_of_threads(2);
 
     m_node = ros::NodeHandle("controller_node");
-    m_node.setCallbackQueue(&m_queue);
+    //m_node.setCallbackQueue(&m_queue);
 
     m_service = m_node.advertiseService("control_a1",
                                         &Controller::controllerCallback, this);
@@ -59,9 +59,9 @@ class Controller {
 
     // m_multiExec.add_callback(std::bind(&Controller::runLoop, this));
     // m_multiExec.add_callback(std::bind(&Controller::updateLoop, &roslcm));
-
+    m_spinner.start();
     runLoop(roslcm);
-
+    m_spinner.stop();
     // m_multiExec.spin();
   }
 
@@ -75,10 +75,11 @@ class Controller {
     m_reqHighROS.forwardSpeed = req.forwardSpeed;
     m_reqHighROS.sideSpeed = req.sideSpeed;
     m_reqHighROS.rotateSpeed = req.rotateSpeed;
-    std::cout << "REQUEST\nmode:" << req.mode
-              << "\nfwdspd: " << req.forwardSpeed
-              << "\nsidespd: " << req.sideSpeed
-              << "\nrotspd: " << req.rotateSpeed << std::endl;
+    m_reqHighROS.mode = req.mode;
+    //std::cout << "REQUEST\nmode:" << m_reqHighROS.mode
+     //         << "\nfwdspd: " << m_reqHighROS.forwardSpeed
+     //         << "\nsidespd: " << m_reqHighROS.sideSpeed
+      //        << "\nrotspd: " << m_reqHighROS.rotateSpeed << std::endl;
     res.success = true;
     res.message = "";
     return res.success;
@@ -93,19 +94,22 @@ class Controller {
     while (ros::ok()) {
       roslcm.Get(RecvHighLCM);
       m_recvHighROS = ToRos(RecvHighLCM);
-
+      std::cout << "\n\nmode:" << m_reqHighROS.mode
+                << "\nfwdspd: " << m_reqHighROS.forwardSpeed
+                << "\nsidespd: " << m_reqHighROS.sideSpeed
+                << "\nrotspd: " << m_reqHighROS.rotateSpeed << std::endl;
       SendHighLCM = ToLcm(m_reqHighROS, SendHighLCM);
       roslcm.Send(SendHighLCM);
-      std::cout << "Sending lcm" << std::endl;
+      //std::cout << "Sending lcm" << std::endl;
 
-      //   ros::spinOnce();
-      m_multiSpinner.spin(&m_queue);
+      //ros::spinOnce();
+      //m_multiSpinner.spin(&m_queue);
       loop_rate.sleep();
     }
   }
 
-  ros::MultiThreadedSpinner m_multiSpinner;
-  ros::CallbackQueue m_queue;
+  ros::AsyncSpinner m_spinner;
+  //ros::CallbackQueue m_queue;
   ros::ServiceServer m_service;
   ros::NodeHandle m_node;
   unitree_legged_msgs::HighCmd m_reqHighROS;
@@ -114,7 +118,7 @@ class Controller {
 };
 
 int main(int argc, char *argv[]) {
-  ros::init(argc, argv, "walk_ros_mode");
+  ros::init(argc, argv, "ctrl_ros_mode");
   std::string firmwork;
   ros::param::get("/firmwork", firmwork);
 
